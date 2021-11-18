@@ -7,4 +7,8 @@
 /public/bundles/
 /var/
 /vendor/
+/.idea
+/deployment/nginx/volumes
+/deployment/mysql/volumes
+/deployment/php/volumes
 ###< symfony/framework-bundle ###

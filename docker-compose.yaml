@@ -1,0 +1,54 @@
+version: "3.8"
+
+networks:
+  nginx-php-7.4-mysql-8:
+
+services:
+
+  # ngnx
+  nginx:
+    image: nginx:stable-alpine
+    container_name: nginx_alp
+    ports:
+      - "8080:80"
+    volumes:
+      - ./:/var/www/music-parser
+      - ./deployment/nginx/nginx.conf:/etc/nginx/conf.d/nginx.conf
+    links:
+      - php-7.4
+    # контейнер nginx должен запуститься после php и postgres
+    depends_on:
+      - php-7.4
+      - mysql-8
+    networks:
+      - nginx-php-7.4-mysql-8
+
+  # php
+  php-7.4:
+    build:
+      context: .
+      dockerfile: ./deployment/php/Dockerfile
+    container_name: php-7.4
+    ports:
+      - "9001:9000"
+    volumes:
+      - ./:/var/www/music-parser
+    networks:
+      - nginx-php-7.4-mysql-8
+
+  # mysql
+  mysql-8:
+    image: mysql:8
+    container_name: mysql-8
+    ports:
+      - "4306:3306"
+    volumes:
+      - ./mysql/volumes:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: always # always restart unless stopped manually
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - nginx-php-7.4-mysql-8
