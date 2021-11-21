@@ -17,6 +17,9 @@
     "doctrine/lexer": {
         "version": "1.2.1"
     },
+    "imangazaliev/didom": {
+        "version": "1.18"
+    },
     "monolog/monolog": {
         "version": "2.3.5"
     },
