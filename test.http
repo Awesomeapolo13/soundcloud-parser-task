@@ -1,3 +1,0 @@
-GET http://music-parser:8080/parsing
-Accept: application/json
-#Authorization: Bearer ed44d4212a970cbe10751514fbb506e49ddbc930
