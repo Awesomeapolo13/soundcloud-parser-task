@@ -3,8 +3,6 @@
 namespace App\Command;
 
 use App\Parser\ParserInterface;
-use DiDom\Document;
-use DiDom\Query;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;

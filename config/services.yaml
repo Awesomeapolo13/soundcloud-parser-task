@@ -20,6 +20,18 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
             - '../src/Tests/'
+            - '../src/Parser/'
+
+    App\Parser\SoundCloudParser:
+        arguments:
+            $repository: '@App\Repository\AuthorRepository'
+
+    App\Command\ExampleCommand:
+        arguments:
+            $parser: '@App\Parser\SoundCloudParser'
+
+
+
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

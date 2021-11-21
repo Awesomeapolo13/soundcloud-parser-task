@@ -6,6 +6,7 @@ use App\Repository\AuthorRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 /**
@@ -18,7 +19,7 @@ class Author
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
-     * @ORM\Column(type="integer")
+     * @ORM\Column(type="integer", unique=true)
      */
     private $id;
 
@@ -43,7 +44,21 @@ class Author
     private $followersCount;
 
     /**
-     * @ORM\OneToMany(targetEntity=Track::class, mappedBy="authorId", orphanRemoval=true)
+     * @var \DateTime
+     * @Gedmo\Timestampable(on="create")
+     * @ORM\Column(type="datetime")
+     */
+    protected $createdAt;
+
+    /**
+     * @var \DateTime
+     * @Gedmo\Timestampable(on="update")
+     * @ORM\Column(type="datetime")
+     */
+    protected $updatedAt;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Track::class, mappedBy="authorId", orphanRemoval=true, cascade={"persist"})
      */
     private $tracks;
 
@@ -55,6 +70,13 @@ class Author
     public function getId(): ?int
     {
         return $this->id;
+    }
+
+    public function setId(int $id): self
+    {
+        $this->id = $id;
+
+        return $this;
     }
 
     public function getName(): ?string
@@ -117,7 +139,7 @@ class Author
     {
         if (!$this->tracks->contains($track)) {
             $this->tracks[] = $track;
-            $track->setAuthorId($this);
+            $track->setAuthor($this);
         }
 
         return $this;
@@ -127,8 +149,8 @@ class Author
     {
         if ($this->tracks->removeElement($track)) {
             // set the owning side to null (unless already changed)
-            if ($track->getAuthorId() === $this) {
-                $track->setAuthorId(null);
+            if ($track->getAuthor() === $this) {
+                $track->setAuthor(null);
             }
         }
 

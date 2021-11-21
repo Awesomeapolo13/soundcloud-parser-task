@@ -2,9 +2,13 @@
 
 namespace App\Parser;
 
+use App\Entity\Author;
+use App\Entity\Track;
 use App\Exception\NotFoundAuthorIdException;
 use DiDom\Document;
 use App\Exception\HttpRequestException;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
+use Doctrine\ORM\EntityManagerInterface;
 
 class SoundCloudParser implements ParserInterface
 {
@@ -12,6 +16,26 @@ class SoundCloudParser implements ParserInterface
      * @var string
      */
     private $url;
+
+    /**
+     * @var ServiceEntityRepositoryInterface
+     */
+    private $repository;
+
+    /**
+     * @var EntityManagerInterface
+     */
+    private $em;
+
+    /**
+     * @param ServiceEntityRepositoryInterface $repository
+     */
+    public function __construct(ServiceEntityRepositoryInterface $repository, EntityManagerInterface $em)
+    {
+        $this->repository = $repository;
+        $this->em = $em;
+    }
+
 
     public function setUrl(string $url)
     {
@@ -28,6 +52,8 @@ class SoundCloudParser implements ParserInterface
         $tracksData = $this->findAuthorAndTracks($authorId);
 
         $tracksToSave = [];
+
+        $timestamp = new \DateTime();
 
         foreach ($tracksData as $track) {
             $tracksToSave[] = [
@@ -46,7 +72,31 @@ class SoundCloudParser implements ParserInterface
             'followersCount' => $tracksData[0]->user->followers_count,
         ];
 
-        dd($authorData, $tracksToSave);
+        $saveAuthorWithTracks = (new Author())
+            ->setId($tracksData[0]->user->id)
+            ->setName($tracksData[0]->user->username)
+            ->setAlias($tracksData[0]->user->full_name)
+            ->setCity($tracksData[0]->user->city)
+            ->setFollowersCount($tracksData[0]->user->followers_count)
+        ;
+
+        foreach ($tracksData as $track) {
+            $newTrack = (new Track())
+                ->setTitle($track->title)
+                ->setDuration($track->full_duration)
+                ->setPlaybackCount($track->playback_count)
+                ->setCommentsCount($track->comment_count)
+            ;
+
+            $this->em->persist($saveAuthorWithTracks);
+            $saveAuthorWithTracks->addTrack($newTrack);
+            $this->em->persist($newTrack);
+        }
+
+        $this->em->persist($saveAuthorWithTracks);
+        $this->em->flush();
+
+        dump($authorData, $tracksToSave);
     }
 
     /**
@@ -58,10 +108,10 @@ class SoundCloudParser implements ParserInterface
      */
     protected function findAuthorAndTracks(int $authorId): array
     {
-        $ch = curl_init (); // инициализация
+        $ch = curl_init(); // инициализация
 
         curl_setopt_array($ch, [
-            CURLOPT_URL => 'https://api-v2.soundcloud.com/users/' .$authorId. '/tracks?representation=&client_id=aruu5nVXiDILh6Dg7IlLpyhpjsnC2POa&limit=20&offset=0&linked_partitioning=1&app_version=1637227382&app_locale=en',
+            CURLOPT_URL => 'https://api-v2.soundcloud.com/users/' . $authorId . '/tracks?representation=&client_id=aruu5nVXiDILh6Dg7IlLpyhpjsnC2POa&limit=20&offset=0&linked_partitioning=1&app_version=1637227382&app_locale=en',
             CURLOPT_RETURNTRANSFER => true, // устанавливаем, чтобы запрос вернул false в случае неудачи
             CURLOPT_CONNECTTIMEOUT => 30,
         ]);
@@ -91,7 +141,7 @@ class SoundCloudParser implements ParserInterface
     {
         foreach ($tagsArray as $tag) {
             if (!empty($tag->getAttribute('content'))) {
-                $authorId = !empty(explode(':', $tag->getAttribute('content'))[2]) ? explode(':', $tag->getAttribute('content'))[2] :  null;
+                $authorId = !empty(explode(':', $tag->getAttribute('content'))[2]) ? explode(':', $tag->getAttribute('content'))[2] : null;
                 if (empty($authorId)) {
                     continue;
                 }

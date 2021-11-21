@@ -19,6 +19,24 @@ class AuthorRepository extends ServiceEntityRepository
         parent::__construct($registry, Author::class);
     }
 
+    /**
+     * Находит автора по id и все его треки
+     *
+     * @param int $id
+     * @return int|mixed|string
+     */
+    public function findAuthorWithTracks(int $id)
+    {
+        return $this->createQueryBuilder('a')
+            ->andWhere('a.id = :id')
+            ->setParameter('id', $id)
+            ->leftJoin('a.tracks', 't')
+            ->addSelect('t')
+            ->getQuery()
+            ->getResult()
+        ;
+    }
+
     // /**
     //  * @return Author[] Returns an array of Author objects
     //  */
