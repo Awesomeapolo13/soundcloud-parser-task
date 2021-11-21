@@ -12,7 +12,7 @@
 ```
 docker-compose build
 
-docker-compose bup -d
+docker-compose up -d
 ```
 
 Затем зайти в контейнер php-7.4 и установить зависимости
@@ -21,5 +21,15 @@ docker exec -it php-7.4 bash
 
 composer install
 ```
+Выйти из контейнера, нажав Ctrl + D
 
+Создать базу данных
+```
+docker-compose run --rm php-7.4 php bin/console doctrine:database:create
+```
+
+Выполнить миграции
+```
+docker-compose run --rm php-7.4 php bin/console doctrine:migrations:migrate
+```
 
