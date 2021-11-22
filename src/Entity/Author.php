@@ -189,13 +189,7 @@ class Author
     public function createTracks(array $tracksData)
     {
         foreach ($tracksData as $track) {
-            $newTrack = (new Track())
-                ->setTitle($track->title)
-                ->setDuration($track->full_duration)
-                ->setPlaybackCount($track->playback_count)
-                ->setCommentsCount($track->comment_count)
-                ->setAuthor($this)
-            ;
+            $newTrack = Track::create($track, $this);
 
             $this->tracks->add($newTrack);
         }

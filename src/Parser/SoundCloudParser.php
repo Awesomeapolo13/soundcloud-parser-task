@@ -29,6 +29,7 @@ class SoundCloudParser implements ParserInterface
 
     /**
      * @param ServiceEntityRepositoryInterface $repository
+     * @param EntityManagerInterface $em
      */
     public function __construct(ServiceEntityRepositoryInterface $repository, EntityManagerInterface $em)
     {
@@ -36,7 +37,9 @@ class SoundCloudParser implements ParserInterface
         $this->em = $em;
     }
 
-
+    /**
+     * @param string $url
+     */
     public function setUrl(string $url)
     {
         $this->url = $url;
@@ -50,6 +53,8 @@ class SoundCloudParser implements ParserInterface
         $authorId = $this->findAuthorIdFromHtml($document->find('meta'));
         // получаем массив треков автора, на пустоту дальше можно не проверять, т.к. есть проверка внутри метода
         $tracksData = $this->loadAuthorAndTracks($authorId);
+
+        dd($tracksData);
 
         $tracksToSave = [];
 
@@ -70,7 +75,24 @@ class SoundCloudParser implements ParserInterface
             'followersCount' => $tracksData[0]->user->followers_count,
         ];
 
+        $currentAuthor = $this->repository->findAuthorWithTracks($tracksData[0]->user->id);
+
+//        dd($currentAuthor->getResourceId());
         $saveAuthorWithTracks = Author::create($tracksData[0]->user);
+
+        if (empty($currentAuthor)) {
+            dd('Такого автора еще не было, надо сохранить и автора и треки');
+            $saveAuthorWithTracks->createTracks($tracksData);
+            $this->em->persist($saveAuthorWithTracks);
+            $this->em->flush();
+        }
+
+        dd('Автор был, проверяем треки и сохраняем те, что еще не добавлены');
+        foreach ($tracksData as $track) {
+            $newTrack = Track::create($track, Author::create($tracksData[0]->user));
+
+            $this->tracks->add($newTrack);
+        }
 
         $saveAuthorWithTracks->createTracks($tracksData);
 

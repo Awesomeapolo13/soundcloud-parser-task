@@ -132,4 +132,36 @@ class Track
 
         return $this;
     }
+
+    /**
+     * Создает трек из переданных данных и объекта автора
+     *
+     * @param object $trackData
+     * @param Author $author
+     * @return Track
+     */
+    public static function create(object $trackData, Author $author): Track
+    {
+        return (new self)
+            ->setTitle($trackData->title)
+            ->setDuration($trackData->full_duration)
+            ->setPlaybackCount($trackData->playback_count)
+            ->setCommentsCount($trackData->comment_count)
+            ->setAuthor($author)
+        ;
+    }
+
+    // ToDo нужно добавить поле resourse_id и в этот класс
+    //  затем отфильтровать треки, убрав существующеи и сохранить те, которых нет
+    public static function createManyUnique(iterable $tracks, Author $author): array
+    {
+        $newTracks = [];
+        foreach ($tracks as $track) {
+            if (in_array($track, $author->getTracks())) {
+                $newTracks[] = Track::create($track, $author);
+            }
+        }
+
+        return $newTracks;
+    }
 }

@@ -28,12 +28,12 @@ class AuthorRepository extends ServiceEntityRepository
     public function findAuthorWithTracks(int $id)
     {
         return $this->createQueryBuilder('a')
-            ->andWhere('a.id = :id')
+            ->andWhere('a.resourceId = :id')
             ->setParameter('id', $id)
             ->leftJoin('a.tracks', 't')
             ->addSelect('t')
             ->getQuery()
-            ->getResult()
+            ->getOneOrNullResult()
         ;
     }
 
