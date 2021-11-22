@@ -51,55 +51,20 @@ class SoundCloudParser implements ParserInterface
         $document = new Document($this->url, true);
         // получаем id автора
         $authorId = $this->findAuthorIdFromHtml($document->find('meta'));
-        // получаем массив треков автора, на пустоту дальше можно не проверять, т.к. есть проверка внутри метода
+        // получаем массив треков автора, на пустоту дальше можно не проверять, т.к. есть проверка внутри метода loadAuthorAndTracks()
         $tracksData = $this->loadAuthorAndTracks($authorId);
-
-        dd($tracksData);
-
-        $tracksToSave = [];
-
-        foreach ($tracksData as $track) {
-            $tracksToSave[] = [
-                'title' => $track->title,
-                'duration' => $track->full_duration, // продолжительность
-                'playbackCount' => $track->playback_count, // количество прослушиваний
-                'commentsCount' => $track->comment_count, // количество комментариев
-            ];
-        }
-
-        $authorData = [
-            'id' => $tracksData[0]->user->id,
-            'name' => $tracksData[0]->user->username,
-            'alias' => $tracksData[0]->user->full_name,
-            'city' => $tracksData[0]->user->city,
-            'followersCount' => $tracksData[0]->user->followers_count,
-        ];
-
+        // пробуем получить текущего автора
         $currentAuthor = $this->repository->findAuthorWithTracks($tracksData[0]->user->id);
 
-//        dd($currentAuthor->getResourceId());
-        $saveAuthorWithTracks = Author::create($tracksData[0]->user);
-
+        // если автор не найден, то создаем новый объект сущности, сохраняем его и все полученные треки
+        // проверка на существование такого трека не требуется, т.к. если нет автора, то и треков его быть не должно
         if (empty($currentAuthor)) {
-            dd('Такого автора еще не было, надо сохранить и автора и треки');
-            $saveAuthorWithTracks->createTracks($tracksData);
-            $this->em->persist($saveAuthorWithTracks);
-            $this->em->flush();
+            $this->saveAuthorWithTracks($tracksData[0]->user, $tracksData);
+            return;
         }
 
-        dd('Автор был, проверяем треки и сохраняем те, что еще не добавлены');
-        foreach ($tracksData as $track) {
-            $newTrack = Track::create($track, Author::create($tracksData[0]->user));
-
-            $this->tracks->add($newTrack);
-        }
-
-        $saveAuthorWithTracks->createTracks($tracksData);
-
-        $this->em->persist($saveAuthorWithTracks);
-        $this->em->flush();
-
-        dump($authorData, $tracksToSave);
+        // если такой автор уже существует, то фильтруем уникальные треки для сохранения
+        $this->saveUniqueTracks($tracksData, $currentAuthor);
     }
 
     /**
@@ -148,11 +113,65 @@ class SoundCloudParser implements ParserInterface
                 if (empty($authorId)) {
                     continue;
                 }
-                dump($authorId);
+
                 return $authorId;
             }
         }
 
         throw new NotFoundAuthorIdException();
+    }
+
+    /**
+     * Фильтрует треки и оставляет только те, что не сохранены в БД
+     *
+     * Поскольку мы имеем дело с двумя объектами решил использовать вложенный цикл
+     *
+     * @param iterable $tracks - полученная от ресурса коллекция треков
+     * @param iterable $alreadySavedTracks - коллекция треков, уже сохраненная в БД
+     * @return iterable - отфильтрованная коллекция треков
+     */
+    protected function filterUniqueTracks(iterable $tracks, iterable $alreadySavedTracks): iterable
+    {
+        foreach ($tracks as $key => $track) {
+            foreach ($alreadySavedTracks as $authorTrack) {
+                if ($track->id === $authorTrack->getResourceId()) {
+                    unset($tracks[$key]);
+                    break;
+                }
+            }
+        }
+
+        return $tracks;
+    }
+
+    /**
+     * Сохраняет данные автора и треков в БД
+     *
+     * @param object $authorData - объект данных автора
+     * @param iterable $tracksData - коллекция треков
+     */
+    protected function saveAuthorWithTracks(object $authorData, iterable $tracksData): void
+    {
+        $saveAuthorWithTracks = Author::create($authorData);
+        $saveAuthorWithTracks->createTracks($tracksData);
+        $this->em->persist($saveAuthorWithTracks);
+        $this->em->flush();
+    }
+
+    /**
+     * Сохраняет треки автора, если они ранее не были сохранены
+     *
+     * @param iterable $tracks
+     * @param Author $author
+     */
+    protected function saveUniqueTracks(iterable $tracks, Author $author): void
+    {
+        $uniqueTracks = $this->filterUniqueTracks($tracks, $author->getTracks());
+        if (!empty($uniqueTracks)) {
+            foreach ($uniqueTracks as $track) {
+                $this->em->persist(Track::create($track, $author));
+            }
+            $this->em->flush();
+        }
     }
 }

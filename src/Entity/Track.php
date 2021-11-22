@@ -42,6 +42,13 @@ class Track
     private $commentsCount;
 
     /**
+     * Идентификатор трека, присвоенный на сайте откуда получена информация о нем (например на SoundCloud)
+     *
+     * @ORM\Column(type="integer", unique="true")
+     */
+    private $resourceId;
+
+    /**
      * @var \DateTime
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime")
@@ -133,6 +140,18 @@ class Track
         return $this;
     }
 
+    public function getResourceId(): ?int
+    {
+        return $this->resourceId;
+    }
+
+    public function setResourceId(int $resourceId): self
+    {
+        $this->resourceId = $resourceId;
+
+        return $this;
+    }
+
     /**
      * Создает трек из переданных данных и объекта автора
      *
@@ -144,6 +163,7 @@ class Track
     {
         return (new self)
             ->setTitle($trackData->title)
+            ->setResourceId($trackData->id)
             ->setDuration($trackData->full_duration)
             ->setPlaybackCount($trackData->playback_count)
             ->setCommentsCount($trackData->comment_count)
@@ -151,15 +171,18 @@ class Track
         ;
     }
 
-    // ToDo нужно добавить поле resourse_id и в этот класс
-    //  затем отфильтровать треки, убрав существующеи и сохранить те, которых нет
-    public static function createManyUnique(iterable $tracks, Author $author): array
+    /**
+     * Производит создание коллекции треков
+     *
+     * @param iterable $tracks - коллекция треков
+     * @param Author $author - автор треков
+     * @return iterable
+     */
+    public static function createMany(iterable $tracks, Author $author): iterable
     {
         $newTracks = [];
         foreach ($tracks as $track) {
-            if (in_array($track, $author->getTracks())) {
-                $newTracks[] = Track::create($track, $author);
-            }
+            $newTracks[] = self::create($track, $author);
         }
 
         return $newTracks;

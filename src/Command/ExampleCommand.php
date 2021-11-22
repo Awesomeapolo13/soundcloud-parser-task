@@ -38,15 +38,20 @@ class ExampleCommand extends Command
         $url = $input->getArgument('url');
 
         if ($url) {
-            $io->note(sprintf('Получен url для парсинга: %s', $url));
+            $io->text(sprintf('Получен url для парсинга: %s', $url));
         }
 
-        $this->parser
-            ->setUrl($url);
-        $this->parser
-            ->parse();
+        $this->parser->setUrl($url);
 
-        $io->success('You have a new command! Now make it your own! Pass --help to see your options.');
+        try {
+            $this->parser->parse();
+        } catch (\Exception $exception) {
+            $io->error($exception->getMessage());
+
+            return Command::FAILURE;
+        }
+
+        $io->success('Команда выполнилась успешно! Уникальный данные авторов и треков сохранены в БД');
 
         return Command::SUCCESS;
     }

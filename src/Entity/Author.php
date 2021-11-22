@@ -58,7 +58,7 @@ class Author
     protected $updatedAt;
 
     /**
-     * Идентификатор автора на сайте откуда получена информация о нем (например на SoundCloud)
+     * Идентификатор автора, присвоенный на сайте откуда получена информация о нем (например на SoundCloud)
      *
      * @ORM\Column(type="integer", unique="true")
      */
@@ -186,11 +186,15 @@ class Author
         ;
     }
 
-    public function createTracks(array $tracksData)
+    /**
+     * Создает треки, связанные с автора
+     *
+     * @param array $tracksData
+     */
+    public function createTracks(iterable $tracksData): void
     {
         foreach ($tracksData as $track) {
             $newTrack = Track::create($track, $this);
-
             $this->tracks->add($newTrack);
         }
     }
