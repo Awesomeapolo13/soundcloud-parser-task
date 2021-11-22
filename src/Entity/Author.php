@@ -19,7 +19,7 @@ class Author
     /**
      * @ORM\Id
      * @ORM\GeneratedValue
-     * @ORM\Column(type="integer", unique=true)
+     * @ORM\Column(type="integer", unique="true")
      */
     private $id;
 
@@ -58,7 +58,15 @@ class Author
     protected $updatedAt;
 
     /**
-     * @ORM\OneToMany(targetEntity=Track::class, mappedBy="authorId", orphanRemoval=true, cascade={"persist"})
+     * Идентификатор автора на сайте откуда получена информация о нем (например на SoundCloud)
+     *
+     * @ORM\Column(type="integer", unique="true")
+     */
+    private $resourceId;
+
+    /**
+     * @ORM\OneToMany(targetEntity=Track::class, mappedBy="author", orphanRemoval=true, cascade={"persist", "remove"})
+     * @ORM\JoinColumn(name="author_id", referencedColumnName="authorId")
      */
     private $tracks;
 
@@ -72,9 +80,14 @@ class Author
         return $this->id;
     }
 
-    public function setId(int $id): self
+    public function getResourceId(): ?int
     {
-        $this->id = $id;
+        return $this->resourceId;
+    }
+
+    public function setResourceId(int $resourceId): self
+    {
+        $this->resourceId = $resourceId;
 
         return $this;
     }
@@ -148,12 +161,43 @@ class Author
     public function removeTrack(Track $track): self
     {
         if ($this->tracks->removeElement($track)) {
-            // set the owning side to null (unless already changed)
             if ($track->getAuthor() === $this) {
                 $track->setAuthor(null);
             }
         }
 
         return $this;
+    }
+
+    /**
+     * Создает автора из переданных данных
+     *
+     * @param object $authorData
+     * @return Author
+     */
+    public static function create(object $authorData): Author
+    {
+        return (new self)
+            ->setResourceId($authorData->id)
+            ->setName($authorData->username)
+            ->setAlias($authorData->full_name)
+            ->setCity($authorData->city)
+            ->setFollowersCount($authorData->followers_count)
+        ;
+    }
+
+    public function createTracks(array $tracksData)
+    {
+        foreach ($tracksData as $track) {
+            $newTrack = (new Track())
+                ->setTitle($track->title)
+                ->setDuration($track->full_duration)
+                ->setPlaybackCount($track->playback_count)
+                ->setCommentsCount($track->comment_count)
+                ->setAuthor($this)
+            ;
+
+            $this->tracks->add($newTrack);
+        }
     }
 }

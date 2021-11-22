@@ -42,12 +42,6 @@ class Track
     private $commentsCount;
 
     /**
-     * @ORM\ManyToOne(targetEntity=Author::class, inversedBy="tracks")
-     * @ORM\JoinColumn(nullable=false)
-     */
-    private $author;
-
-    /**
      * @var \DateTime
      * @Gedmo\Timestampable(on="create")
      * @ORM\Column(type="datetime")
@@ -60,6 +54,12 @@ class Track
      * @ORM\Column(type="datetime")
      */
     protected $updatedAt;
+
+    /**
+     * @ORM\ManyToOne(targetEntity=Author::class, inversedBy="tracks")
+     * @ORM\JoinColumn(name="author_id", referencedColumnName="id", nullable=false)
+     */
+    private $author;
 
     public function getId(): ?int
     {
@@ -123,12 +123,12 @@ class Track
 
     public function getAuthor(): ?Author
     {
-        return $this->authorId;
+        return $this->author;
     }
 
-    public function setAuthor(?Author $authorId): self
+    public function setAuthor(?Author $author): self
     {
-        $this->authorId = $authorId;
+        $this->author = $author;
 
         return $this;
     }

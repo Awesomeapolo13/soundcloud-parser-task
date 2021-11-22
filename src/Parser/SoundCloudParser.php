@@ -49,11 +49,9 @@ class SoundCloudParser implements ParserInterface
         // получаем id автора
         $authorId = $this->findAuthorIdFromHtml($document->find('meta'));
         // получаем массив треков автора, на пустоту дальше можно не проверять, т.к. есть проверка внутри метода
-        $tracksData = $this->findAuthorAndTracks($authorId);
+        $tracksData = $this->loadAuthorAndTracks($authorId);
 
         $tracksToSave = [];
-
-        $timestamp = new \DateTime();
 
         foreach ($tracksData as $track) {
             $tracksToSave[] = [
@@ -72,26 +70,9 @@ class SoundCloudParser implements ParserInterface
             'followersCount' => $tracksData[0]->user->followers_count,
         ];
 
-        $saveAuthorWithTracks = (new Author())
-            ->setId($tracksData[0]->user->id)
-            ->setName($tracksData[0]->user->username)
-            ->setAlias($tracksData[0]->user->full_name)
-            ->setCity($tracksData[0]->user->city)
-            ->setFollowersCount($tracksData[0]->user->followers_count)
-        ;
+        $saveAuthorWithTracks = Author::create($tracksData[0]->user);
 
-        foreach ($tracksData as $track) {
-            $newTrack = (new Track())
-                ->setTitle($track->title)
-                ->setDuration($track->full_duration)
-                ->setPlaybackCount($track->playback_count)
-                ->setCommentsCount($track->comment_count)
-            ;
-
-            $this->em->persist($saveAuthorWithTracks);
-            $saveAuthorWithTracks->addTrack($newTrack);
-            $this->em->persist($newTrack);
-        }
+        $saveAuthorWithTracks->createTracks($tracksData);
 
         $this->em->persist($saveAuthorWithTracks);
         $this->em->flush();
@@ -106,7 +87,7 @@ class SoundCloudParser implements ParserInterface
      * @return array - массив треков
      * @throws HttpRequestException - в случае неудавшегося запроса
      */
-    protected function findAuthorAndTracks(int $authorId): array
+    protected function loadAuthorAndTracks(int $authorId): array
     {
         $ch = curl_init(); // инициализация
 
