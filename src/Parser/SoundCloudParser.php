@@ -61,13 +61,14 @@ class SoundCloudParser implements ParserInterface
         $authorId = $this->findAuthorIdFromHtml($document->find('meta'));
         // получаем массив треков автора, на пустоту дальше можно не проверять, т.к. есть проверка внутри метода loadAuthorAndTracks()
         $tracksData = $this->loadAuthorAndTracks($authorId);
-        // пробуем получить текущего автора
-        $currentAuthor = $this->repository->findAuthorWithTracks(array_shift($tracksData)->user->id);
-
+        // выделяем из массива треков объект с данными автора
+        $tracksAuthor = array_shift($tracksData)->user;
+        //пробуем получить автора из БД, если он там есть
+        $currentAuthor = $this->repository->findAuthorWithTracks($tracksAuthor->id);
         // если автор не найден, то создаем новый объект сущности, сохраняем его и все полученные треки
         // проверка на существование такого трека не требуется, т.к. если нет автора, то и треков его быть не должно
         if (empty($currentAuthor)) {
-            $this->saveAuthorWithTracks(array_shift($tracksData)->user, $tracksData);
+            $this->saveAuthorWithTracks($tracksAuthor, $tracksData);
             return;
         }
 
