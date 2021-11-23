@@ -7,6 +7,7 @@ use App\Entity\Track;
 use App\Exception\NotFoundAuthorIdException;
 use DiDom\Document;
 use App\Exception\HttpRequestException;
+use DiDom\Exceptions\InvalidSelectorException;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -45,6 +46,13 @@ class SoundCloudParser implements ParserInterface
         $this->url = $url;
     }
 
+    /**
+     * Парсит данные треков и автора
+     *
+     * @throws HttpRequestException
+     * @throws NotFoundAuthorIdException
+     * @throws InvalidSelectorException
+     */
     public function parse()
     {
         // загружаем страницу по url
@@ -54,12 +62,12 @@ class SoundCloudParser implements ParserInterface
         // получаем массив треков автора, на пустоту дальше можно не проверять, т.к. есть проверка внутри метода loadAuthorAndTracks()
         $tracksData = $this->loadAuthorAndTracks($authorId);
         // пробуем получить текущего автора
-        $currentAuthor = $this->repository->findAuthorWithTracks($tracksData[0]->user->id);
+        $currentAuthor = $this->repository->findAuthorWithTracks(array_shift($tracksData)->user->id);
 
         // если автор не найден, то создаем новый объект сущности, сохраняем его и все полученные треки
         // проверка на существование такого трека не требуется, т.к. если нет автора, то и треков его быть не должно
         if (empty($currentAuthor)) {
-            $this->saveAuthorWithTracks($tracksData[0]->user, $tracksData);
+            $this->saveAuthorWithTracks(array_shift($tracksData)->user, $tracksData);
             return;
         }
 
@@ -77,7 +85,6 @@ class SoundCloudParser implements ParserInterface
     protected function loadAuthorAndTracks(int $authorId): array
     {
         $ch = curl_init(); // инициализация
-
         curl_setopt_array($ch, [
             CURLOPT_URL => 'https://api-v2.soundcloud.com/users/' . $authorId . '/tracks?representation=&client_id=aruu5nVXiDILh6Dg7IlLpyhpjsnC2POa&limit=20&offset=0&linked_partitioning=1&app_version=1637227382&app_locale=en',
             CURLOPT_RETURNTRANSFER => true, // устанавливаем, чтобы запрос вернул false в случае неудачи
@@ -98,7 +105,7 @@ class SoundCloudParser implements ParserInterface
      * Находит id автора в переданной коллекции тегов
      *
      * Получает коллекцию из тегов, в которых может содержаться id автора.
-     * Сейчас анализирует метатеги, т.к. id автора найден именно в них.
+     * Сейчас анализирует метатеги, т.к. id автора найден именно в них и на конкретной позиции.
      * При изменении в структуре верстки, можно будет переопределить метод.
      *
      * @param iterable $tagsArray - коллекция или массив тегов

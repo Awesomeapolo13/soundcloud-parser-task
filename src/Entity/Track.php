@@ -8,6 +8,8 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 /**
+ * Сущность трека
+ *
  * @ORM\Entity(repositoryClass=TrackRepository::class)
  */
 class Track

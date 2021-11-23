@@ -10,6 +10,8 @@ use Gedmo\Mapping\Annotation as Gedmo;
 use Gedmo\Timestampable\Traits\TimestampableEntity;
 
 /**
+ * Сущность автора
+ *
  * @ORM\Entity(repositoryClass=AuthorRepository::class)
  */
 class Author

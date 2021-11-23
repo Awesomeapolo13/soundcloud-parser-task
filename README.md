@@ -1,4 +1,4 @@
-#Тестовое задание - парсер музыки
+#Тестовое задание - парсер музыки с сайта SoundCloud
 
 ##Деплой
 
@@ -35,9 +35,10 @@ docker-compose run --rm php-7.4 php bin/console doctrine:migrations:migrate
 
 ##Работа с проектом
 
-Класс SoundCloudParser запускается консольной командой ExampleCommand. 
+Класс SoundCloudParser - класс для парсинга треков и артистов с сайта Soundcloud, а так же сохранения их в БД.
+Его работу активирует консольная команда ExampleCommand. 
 Для запуска в контейнере выполнить в терминале команду:
 ```shell
 docker-compose run --rm php-7.4 php bin/console app:parse-example soundcloud_parse_url
 ```
-где soundcloud_parse_url - url адрес soundcloud фомата https://soundcloud.com/dixxy-2
+где soundcloud_parse_url - ссылка на артиста soundcloud фомата https://soundcloud.com/dixxy-2
