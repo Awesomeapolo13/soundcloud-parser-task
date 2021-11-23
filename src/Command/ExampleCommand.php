@@ -3,15 +3,19 @@
 namespace App\Command;
 
 use App\Parser\ParserInterface;
-use DiDom\Document;
-use DiDom\Query;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
+/**
+ * Class ExampleCommand
+ *
+ * Класс команды вызывающей SoundCloudParser
+ *
+ * @package App\Command
+ */
 class ExampleCommand extends Command
 {
     protected static $defaultName = 'app:parse-example';
@@ -41,17 +45,20 @@ class ExampleCommand extends Command
         $url = $input->getArgument('url');
 
         if ($url) {
-            $io->note(sprintf('Получен url для парсинга: %s', $url));
+            $io->text(sprintf('Получен url для парсинга: %s', $url));
         }
 
-        $this->parser
-            ->setUrl($url);
-        $this->parser
-            ->parse();
+        $this->parser->setUrl($url);
 
+        try {
+            $this->parser->parse();
+        } catch (\Exception $exception) {
+            $io->error($exception->getMessage());
 
+            return Command::FAILURE;
+        }
 
-        $io->success('You have a new command! Now make it your own! Pass --help to see your options.');
+        $io->success('Команда выполнилась успешно! Уникальный данные авторов и треков сохранены в БД');
 
         return Command::SUCCESS;
     }
