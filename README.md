@@ -33,7 +33,7 @@ docker-compose run --rm php-7.4 php bin/console doctrine:database:create
 docker-compose run --rm php-7.4 php bin/console doctrine:migrations:migrate
 ```
 
-##Работа с проектом
+## Работа с проектом
 
 Класс SoundCloudParser - класс для парсинга треков и артистов с сайта Soundcloud, а так же сохранения их в БД.
 Его работу активирует консольная команда ExampleCommand. 
